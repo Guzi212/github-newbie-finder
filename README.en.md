@@ -86,23 +86,18 @@ Open the URL Streamlit prints (default `http://localhost:8501`); the home page i
 
 ### Day-to-day: one-click launcher (macOS)
 
-Once the initial setup is done, macOS users can create a double-click entry on the Desktop:
+Once the initial setup is done, macOS users can create two double-click Desktop entries:
 
 ```bash
-chmod +x scripts/launch.command
+chmod +x scripts/launch.command scripts/stop.command
 ln -sf "$PWD/scripts/launch.command" ~/Desktop/"启动 GitHub 小白检索器.command"
+ln -sf "$PWD/scripts/stop.command"   ~/Desktop/"停止 GitHub 小白检索器.command"
 ```
 
-Double-clicking the Desktop file will:
+- Double-click **`启动 GitHub 小白检索器.command`** → starts backend (`:8000`) and Streamlit (`:8501`); if either is already running it's skipped (no re-kill); waits for readiness then opens `http://localhost:8501`.
+- Double-click **`停止 GitHub 小白检索器.command`** → stops both services.
 
-1. Start backend (`:8000`) and Streamlit (`:8501`); if either is already running, it's skipped (no re-kill);
-2. Wait for Streamlit to be ready, then open `http://localhost:8501` in your browser.
-
-> ⚠️ Services run in the background via `nohup`: **closing the browser tab or the Terminal window will NOT stop them**. To stop:
->
-> ```bash
-> pkill -f 'uvicorn app.main' ; pkill -f 'streamlit run streamlit_app'
-> ```
+> ⚠️ Services run in the background via `nohup`: **closing the browser tab or the Terminal window will NOT stop them** — use the stop launcher above, or run `pkill -f 'uvicorn app.main' ; pkill -f 'streamlit run streamlit_app'` manually.
 
 ### Configuring API keys
 
