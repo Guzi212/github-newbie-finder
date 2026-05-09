@@ -64,33 +64,41 @@
 
 ## 快速开始
 
+### Windows：下载后双击
+
+适合完全不熟命令行的用户。
+
+1. 先安装 [Python 3.10+](https://www.python.org/downloads/)。安装时一定勾选 **Add python.exe to PATH**。
+2. 在 GitHub 页面点 **Code** → **Download ZIP**，解压到一个普通目录，例如 `D:\tools\github-newbie-finder`。
+3. 双击 `scripts\launch.bat`。
+4. 第一次启动会自动完成这些事：创建 `.venv`、安装 `requirements.txt`、复制 `.env.example` 为 `.env`、初始化数据库。
+5. 浏览器会自动打开 `http://localhost:8501`。如果没有自动打开，手动复制这个地址到浏览器。
+
+以后再次使用，只需要双击 `scripts\launch.bat`。停止服务时双击 `scripts\stop.bat`。
+
+> 注意：第一次安装依赖需要联网，可能会花几分钟。窗口里如果停在 `installing requirements...`，不是卡死，是在下载 Python 依赖。
+
+#### Windows 常见问题
+
+- 提示 `Python was not found`：说明电脑没有安装 Python，或安装时没勾选 **Add python.exe to PATH**。重新安装 Python 后再双击 `launch.bat`。
+- 提示端口 `8000` 或 `8501` 已被占用：先双击 `scripts\stop.bat`，再重新双击 `launch.bat`。
+- 不要直接运行 `taskkill /F /IM python.exe`，它可能会误杀电脑上其他 Python 程序。
+
+### macOS：一次配置，之后双击
+
+macOS 目前仍需要先在终端里安装一次依赖：
+
 ```bash
-git clone https://github.com/<your-username>/github-newbie-finder.git
+git clone https://github.com/Guzi212/github-newbie-finder.git
 cd github-newbie-finder
-
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-cp .env.example .env  # 想用真 LLM 就编辑这个；保持 echo 也能演示
-
-# Terminal A — 后端（推荐：日志会写到 logs/backend.log）
+cp .env.example .env
 python -m app.cli init-db
-bash scripts/run-backend.sh        # 后台运行
-# 或：bash scripts/run-backend.sh fg  # 前台运行，看实时日志
-
-# Terminal B — 前端
-streamlit run streamlit_app.py
 ```
 
-> 也可以直接 `uvicorn app.main:app --reload --port 8000`，但出问题时 traceback 会丢；用脚本启动则始终落盘到 `logs/backend.log`，遇到 500 时 `tail -f logs/backend.log` 直接看堆栈。
-
-打开 streamlit 给的 URL（默认 `http://localhost:8501`），首页就是「需求检索」。
-
-### 之后日常启动（双击即可）
-
-#### macOS
-
-初次安装完成后，建两个桌面双击入口：
+然后建两个桌面双击入口：
 
 ```bash
 chmod +x scripts/launch.command scripts/stop.command
@@ -101,33 +109,30 @@ ln -sf "$PWD/scripts/stop.command"   ~/Desktop/"停止 GitHub 小白检索器.co
 - 双击 **`启动 GitHub 小白检索器.command`** → 启动 backend（`:8000`）和 Streamlit（`:8501`），已在跑则跳过，不会重复杀进程，等就绪后自动打开 `http://localhost:8501`。
 - 双击 **`停止 GitHub 小白检索器.command`** → 停止上述后台服务。
 
-> ⚠️ 服务通过 `nohup` 在后台运行：**关闭浏览器或 Terminal 窗口都不会停止它们**，必须用上面的"停止"双击或手动 `pkill -f 'uvicorn app.main' ; pkill -f 'streamlit run streamlit_app'`。
+> 服务在后台运行：**关闭浏览器不会停止服务**。停止请双击 `stop.command`，或手动运行 `pkill -f 'uvicorn app.main' ; pkill -f 'streamlit run streamlit_app'`。
 
-#### Windows
+### 命令行启动（开发者可选）
 
-不需要 `chmod` 或 `ln`。Windows 的入口直接放在 `scripts\` 下：
+```bash
+git clone https://github.com/Guzi212/github-newbie-finder.git
+cd github-newbie-finder
+python -m venv .venv
+source .venv/bin/activate  # Windows PowerShell 用 .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env       # Windows 用 copy .env.example .env
+python -m app.cli init-db
 
-- 双击 **`scripts\launch.bat`** → 启动 backend (`:8000`) + Streamlit (`:8501`) + 自动打开 `http://localhost:8501`。两个最小化的 cmd 窗口会出现在任务栏，里面是后端 / 前端的实时日志（关掉它们等于停止服务）。
-- 双击 **`scripts\stop.bat`** → 停止 backend 和 Streamlit。
+bash scripts/run-backend.sh
+streamlit run streamlit_app.py
+```
 
-想要桌面快捷方式：右键 `launch.bat` → "发送到" → "桌面 (创建快捷方式)"，把生成的 `.lnk` 重命名即可（`stop.bat` 同理）。
+默认地址是 `http://localhost:8501`，首页就是「需求检索」。
 
-> ⚠️ Windows 版同样把服务放在后台（独立的最小化 cmd 窗口）：**关闭浏览器不会停止它们**。停止请双击 `stop.bat`，不要直接 `taskkill /F /IM python.exe`（会误杀其它 Python 进程）。
->
-> 前置：必须先按上面"快速开始"在项目根目录建好 `.venv` 并 `pip install -r requirements.txt`。Windows 用户的初次安装命令是：
->
-> ```cmd
-> python -m venv .venv
-> .venv\Scripts\activate
-> pip install -r requirements.txt
-> copy .env.example .env
-> python -m app.cli init-db
-> ```
+### API Key 怎么填
 
-### 配置 API Key 的两种方式
+可以先不填 API Key：默认的 `LLM_PROVIDER=echo` 演示模式能跑完整流程，只是 LLM 分析会用模拟结果。
 
-1. **网页里管理（推荐）**：侧边栏「🔑 API Key 管理」展开，填表保存，激活按钮切换。多套配置存在 SQLite 里，跨重启保留。
-2. **`.env` 老办法**：照 `.env.example` 改，重启 uvicorn。当网页里没激活任何 Key 时回退到这套。
+想使用真实模型时，推荐在网页侧边栏里打开「API Key 管理」，粘贴 DeepSeek / OpenAI / Anthropic 的 Key，保存并激活。也可以手动编辑 `.env`，但对新手不推荐。
 
 > 推荐 [DeepSeek](https://platform.deepseek.com)：OpenAI 兼容 API，便宜，跑这个项目一杯奶茶能用很久。
 

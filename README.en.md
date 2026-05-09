@@ -62,33 +62,41 @@ The tutorial is tailored to your OS and skill level. Steps the LLM is unsure abo
 
 ## Quick start
 
+### Windows: download and double-click
+
+This is the recommended path for non-technical users.
+
+1. Install [Python 3.10+](https://www.python.org/downloads/). During setup, check **Add python.exe to PATH**.
+2. On GitHub, click **Code** → **Download ZIP**, then unzip the project somewhere simple, for example `D:\tools\github-newbie-finder`.
+3. Double-click `scripts\launch.bat`.
+4. On the first run, the launcher automatically creates `.venv`, installs `requirements.txt`, copies `.env.example` to `.env`, and initializes the database.
+5. The browser should open `http://localhost:8501`. If it does not, paste that address into your browser manually.
+
+After that, use `scripts\launch.bat` to start and `scripts\stop.bat` to stop.
+
+> The first dependency install needs internet access and can take a few minutes. If the window says `installing requirements...`, let it finish.
+
+#### Windows troubleshooting
+
+- `Python was not found`: Python is missing, or it was installed without **Add python.exe to PATH**. Install Python again and rerun `launch.bat`.
+- Port `8000` or `8501` is busy: run `scripts\stop.bat`, then run `launch.bat` again.
+- Avoid `taskkill /F /IM python.exe`; it can kill unrelated Python programs.
+
+### macOS: one setup, then double-click
+
+macOS currently needs one Terminal setup:
+
 ```bash
 git clone https://github.com/Guzi212/github-newbie-finder.git
 cd github-newbie-finder
-
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-cp .env.example .env  # edit if you want a real LLM; `echo` works without keys
-
-# Terminal A — backend (recommended: logs go to logs/backend.log)
+cp .env.example .env
 python -m app.cli init-db
-bash scripts/run-backend.sh        # background
-# or: bash scripts/run-backend.sh fg  # foreground, see live logs
-
-# Terminal B — frontend
-streamlit run streamlit_app.py
 ```
 
-> You can also `uvicorn app.main:app --reload --port 8000` directly, but tracebacks won't be captured. The launcher script always tees to `logs/backend.log`, so when something 500s you can `tail -f logs/backend.log` and see the stack.
-
-Open the URL Streamlit prints (default `http://localhost:8501`); the home page is "需求检索" (Search).
-
-### Day-to-day: one-click launchers
-
-#### macOS
-
-Once the initial setup is done, create two Desktop entries:
+Then create two Desktop entries:
 
 ```bash
 chmod +x scripts/launch.command scripts/stop.command
@@ -99,33 +107,30 @@ ln -sf "$PWD/scripts/stop.command"   ~/Desktop/"停止 GitHub 小白检索器.co
 - Double-click **`启动 GitHub 小白检索器.command`** → starts backend (`:8000`) and Streamlit (`:8501`); already-running services are skipped (no re-kill); waits for readiness then opens `http://localhost:8501`.
 - Double-click **`停止 GitHub 小白检索器.command`** → stops both services.
 
-> ⚠️ Services run in the background via `nohup`: **closing the browser tab or the Terminal window will NOT stop them** — use the stop launcher above, or run `pkill -f 'uvicorn app.main' ; pkill -f 'streamlit run streamlit_app'` manually.
+> Services run in the background: **closing the browser does not stop them**. Use `stop.command`, or run `pkill -f 'uvicorn app.main' ; pkill -f 'streamlit run streamlit_app'`.
 
-#### Windows
+### Command-line start (optional for developers)
 
-No `chmod` / `ln` needed. The entry points live under `scripts\`:
+```bash
+git clone https://github.com/Guzi212/github-newbie-finder.git
+cd github-newbie-finder
+python -m venv .venv
+source .venv/bin/activate  # Windows PowerShell: .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env       # Windows: copy .env.example .env
+python -m app.cli init-db
 
-- Double-click **`scripts\launch.bat`** → starts backend (`:8000`) + Streamlit (`:8501`) + opens `http://localhost:8501`. Two minimized cmd windows appear in the taskbar (backend & frontend logs); closing them equals stopping the services.
-- Double-click **`scripts\stop.bat`** → stops both services.
+bash scripts/run-backend.sh
+streamlit run streamlit_app.py
+```
 
-For a Desktop shortcut: right-click `launch.bat` → "Send to" → "Desktop (create shortcut)" and rename the resulting `.lnk` (same for `stop.bat`).
+The default address is `http://localhost:8501`; the home page is Search.
 
-> ⚠️ Like the macOS version, services keep running after you close the browser. Always stop via `stop.bat` — do **not** use `taskkill /F /IM python.exe`, it would also kill unrelated Python processes.
->
-> Prerequisite: run the initial setup once in the project root:
->
-> ```cmd
-> python -m venv .venv
-> .venv\Scripts\activate
-> pip install -r requirements.txt
-> copy .env.example .env
-> python -m app.cli init-db
-> ```
+### API keys
 
-### Configuring API keys
+You can try the app without an API key first. The default `LLM_PROVIDER=echo` demo mode runs the whole flow with simulated LLM output.
 
-1. **In the UI (recommended)**: open the sidebar `🔑 API Key 管理` expander, paste your key, hit save, then activate it. Multiple credentials are stored in SQLite and survive restarts.
-2. **In `.env` (classic)**: edit `.env.example`, restart uvicorn. Falls back to this when no UI-managed credential is active.
+For real model calls, open the sidebar API key manager, paste a DeepSeek / OpenAI / Anthropic key, save it, and activate it. Editing `.env` also works, but the UI is easier for beginners.
 
 > Recommend [DeepSeek](https://platform.deepseek.com): OpenAI-compatible API, cheap enough that this project runs for a long time on the cost of a coffee.
 
