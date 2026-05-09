@@ -11,6 +11,36 @@
 
 ---
 
+## 界面预览
+
+输入需求 → 自动召回 + 评分 → 看推荐 → 一键生成教程，全程在网页里完成。
+
+**1. 输入需求 · 自适应 Top-N**
+
+候选越多 / 高 star 越多，自动放宽到 Top-7 或 Top-10。
+
+![search](docs/screenshots/1-search.png)
+
+**2. Top 10 对比表**
+
+5 个维度（需求 / 新手 / 部署 / 活跃 / 文档）一览，挑得明白。
+
+![comparison](docs/screenshots/2-recommendations-table.png)
+
+**3. 推荐卡片：评分明细 + LLM 分析 + Evidence**
+
+每条推荐都标着分值依据，并附 LLM 的优缺点分析与 README 证据片段。
+
+![cards](docs/screenshots/3-recommendations-cards.png)
+
+**4. 部署教程：按你的 OS / 水平定制**
+
+不确定的步骤会被打上「⚠️ 需要核对」，避免 LLM 一本正经地胡说命令。
+
+![tutorial](docs/screenshots/4-tutorial.png)
+
+---
+
 ## 它能做什么
 
 1. **解析需求**：把一句"想找一个本地能跑的 RAG 知识库，最好有 Web UI"翻译成结构化条件 + 英文搜索关键词
