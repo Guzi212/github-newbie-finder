@@ -9,3 +9,5 @@ data/
 .DS_Store
 .streamlit/secrets.toml
 .claude/settings.local.json
+logs/*
+!logs/.gitkeep

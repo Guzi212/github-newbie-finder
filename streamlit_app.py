@@ -89,11 +89,21 @@ def _delete(path: str) -> dict:
 
 
 def _api_alive() -> bool:
-    try:
-        _get("/healthz")
-        return True
-    except Exception:
-        return False
+    import time
+
+    for attempt in range(2):
+        try:
+            r = httpx.get(
+                f"{API_BASE}/healthz",
+                timeout=httpx.Timeout(connect=2.0, read=5.0, write=2.0, pool=5.0),
+            )
+            if r.status_code < 400:
+                return True
+        except Exception:
+            pass
+        if attempt == 0:
+            time.sleep(0.4)
+    return False
 
 
 def _row_columns(spec):
@@ -226,7 +236,12 @@ PROFILE = _sidebar_profile()
 _credentials_panel()
 st.sidebar.divider()
 if not _api_alive():
-    st.sidebar.error(f"API 未连通：{API_BASE}\n请先启动 `uvicorn app.main:app`。")
+    st.sidebar.error(
+        f"API 未连通：{API_BASE}\n"
+        "请先启动后端：`bash scripts/run-backend.sh`"
+    )
+    if st.sidebar.button("🔄 重新检测", use_container_width=True):
+        st.rerun()
 else:
     st.sidebar.success(f"API: {API_BASE}")
 

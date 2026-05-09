@@ -39,13 +39,16 @@ pip install -r requirements.txt
 
 cp .env.example .env  # 想用真 LLM 就编辑这个；保持 echo 也能演示
 
-# Terminal A — 后端
+# Terminal A — 后端（推荐：日志会写到 logs/backend.log）
 python -m app.cli init-db
-uvicorn app.main:app --reload --port 8000
+bash scripts/run-backend.sh        # 后台运行
+# 或：bash scripts/run-backend.sh fg  # 前台运行，看实时日志
 
 # Terminal B — 前端
 streamlit run streamlit_app.py
 ```
+
+> 也可以直接 `uvicorn app.main:app --reload --port 8000`，但出问题时 traceback 会丢；用脚本启动则始终落盘到 `logs/backend.log`，遇到 500 时 `tail -f logs/backend.log` 直接看堆栈。
 
 打开 streamlit 给的 URL（默认 `http://localhost:8501`），首页就是「需求检索」。
 
