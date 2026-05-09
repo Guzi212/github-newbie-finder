@@ -1,0 +1,31 @@
+services:
+  api:
+    build: .
+    container_name: gpf_api
+    env_file: .env
+    environment:
+      - API_HOST=0.0.0.0
+      - DATABASE_URL=sqlite:////data/finder.db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  ui:
+    build: .
+    container_name: gpf_ui
+    env_file: .env
+    environment:
+      - API_BASE_URL=http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+    command:
+      - "streamlit"
+      - "run"
+      - "streamlit_app.py"
+      - "--server.address=0.0.0.0"
+      - "--server.port=8501"
+      - "--server.headless=true"
