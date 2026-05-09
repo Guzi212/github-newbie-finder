@@ -86,9 +86,11 @@ streamlit run streamlit_app.py
 
 打开 streamlit 给的 URL（默认 `http://localhost:8501`），首页就是「需求检索」。
 
-### 之后日常启动：macOS 一键打开
+### 之后日常启动（双击即可）
 
-初次安装完成后，macOS 用户可以建两个桌面双击入口：
+#### macOS
+
+初次安装完成后，建两个桌面双击入口：
 
 ```bash
 chmod +x scripts/launch.command scripts/stop.command
@@ -100,6 +102,27 @@ ln -sf "$PWD/scripts/stop.command"   ~/Desktop/"停止 GitHub 小白检索器.co
 - 双击 **`停止 GitHub 小白检索器.command`** → 停止上述后台服务。
 
 > ⚠️ 服务通过 `nohup` 在后台运行：**关闭浏览器或 Terminal 窗口都不会停止它们**，必须用上面的"停止"双击或手动 `pkill -f 'uvicorn app.main' ; pkill -f 'streamlit run streamlit_app'`。
+
+#### Windows
+
+不需要 `chmod` 或 `ln`。Windows 的入口直接放在 `scripts\` 下：
+
+- 双击 **`scripts\launch.bat`** → 启动 backend (`:8000`) + Streamlit (`:8501`) + 自动打开 `http://localhost:8501`。两个最小化的 cmd 窗口会出现在任务栏，里面是后端 / 前端的实时日志（关掉它们等于停止服务）。
+- 双击 **`scripts\stop.bat`** → 停止 backend 和 Streamlit。
+
+想要桌面快捷方式：右键 `launch.bat` → "发送到" → "桌面 (创建快捷方式)"，把生成的 `.lnk` 重命名即可（`stop.bat` 同理）。
+
+> ⚠️ Windows 版同样把服务放在后台（独立的最小化 cmd 窗口）：**关闭浏览器不会停止它们**。停止请双击 `stop.bat`，不要直接 `taskkill /F /IM python.exe`（会误杀其它 Python 进程）。
+>
+> 前置：必须先按上面"快速开始"在项目根目录建好 `.venv` 并 `pip install -r requirements.txt`。Windows 用户的初次安装命令是：
+>
+> ```cmd
+> python -m venv .venv
+> .venv\Scripts\activate
+> pip install -r requirements.txt
+> copy .env.example .env
+> python -m app.cli init-db
+> ```
 
 ### 配置 API Key 的两种方式
 

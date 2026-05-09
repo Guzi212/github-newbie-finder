@@ -84,9 +84,11 @@ streamlit run streamlit_app.py
 
 Open the URL Streamlit prints (default `http://localhost:8501`); the home page is "需求检索" (Search).
 
-### Day-to-day: one-click launcher (macOS)
+### Day-to-day: one-click launchers
 
-Once the initial setup is done, macOS users can create two double-click Desktop entries:
+#### macOS
+
+Once the initial setup is done, create two Desktop entries:
 
 ```bash
 chmod +x scripts/launch.command scripts/stop.command
@@ -94,10 +96,31 @@ ln -sf "$PWD/scripts/launch.command" ~/Desktop/"启动 GitHub 小白检索器.co
 ln -sf "$PWD/scripts/stop.command"   ~/Desktop/"停止 GitHub 小白检索器.command"
 ```
 
-- Double-click **`启动 GitHub 小白检索器.command`** → starts backend (`:8000`) and Streamlit (`:8501`); if either is already running it's skipped (no re-kill); waits for readiness then opens `http://localhost:8501`.
+- Double-click **`启动 GitHub 小白检索器.command`** → starts backend (`:8000`) and Streamlit (`:8501`); already-running services are skipped (no re-kill); waits for readiness then opens `http://localhost:8501`.
 - Double-click **`停止 GitHub 小白检索器.command`** → stops both services.
 
 > ⚠️ Services run in the background via `nohup`: **closing the browser tab or the Terminal window will NOT stop them** — use the stop launcher above, or run `pkill -f 'uvicorn app.main' ; pkill -f 'streamlit run streamlit_app'` manually.
+
+#### Windows
+
+No `chmod` / `ln` needed. The entry points live under `scripts\`:
+
+- Double-click **`scripts\launch.bat`** → starts backend (`:8000`) + Streamlit (`:8501`) + opens `http://localhost:8501`. Two minimized cmd windows appear in the taskbar (backend & frontend logs); closing them equals stopping the services.
+- Double-click **`scripts\stop.bat`** → stops both services.
+
+For a Desktop shortcut: right-click `launch.bat` → "Send to" → "Desktop (create shortcut)" and rename the resulting `.lnk` (same for `stop.bat`).
+
+> ⚠️ Like the macOS version, services keep running after you close the browser. Always stop via `stop.bat` — do **not** use `taskkill /F /IM python.exe`, it would also kill unrelated Python processes.
+>
+> Prerequisite: run the initial setup once in the project root:
+>
+> ```cmd
+> python -m venv .venv
+> .venv\Scripts\activate
+> pip install -r requirements.txt
+> copy .env.example .env
+> python -m app.cli init-db
+> ```
 
 ### Configuring API keys
 
