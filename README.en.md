@@ -84,6 +84,26 @@ streamlit run streamlit_app.py
 
 Open the URL Streamlit prints (default `http://localhost:8501`); the home page is "需求检索" (Search).
 
+### Day-to-day: one-click launcher (macOS)
+
+Once the initial setup is done, macOS users can create a double-click entry on the Desktop:
+
+```bash
+chmod +x scripts/launch.command
+ln -sf "$PWD/scripts/launch.command" ~/Desktop/"启动 GitHub 小白检索器.command"
+```
+
+Double-clicking the Desktop file will:
+
+1. Start backend (`:8000`) and Streamlit (`:8501`); if either is already running, it's skipped (no re-kill);
+2. Wait for Streamlit to be ready, then open `http://localhost:8501` in your browser.
+
+> ⚠️ Services run in the background via `nohup`: **closing the browser tab or the Terminal window will NOT stop them**. To stop:
+>
+> ```bash
+> pkill -f 'uvicorn app.main' ; pkill -f 'streamlit run streamlit_app'
+> ```
+
 ### Configuring API keys
 
 1. **In the UI (recommended)**: open the sidebar `🔑 API Key 管理` expander, paste your key, hit save, then activate it. Multiple credentials are stored in SQLite and survive restarts.

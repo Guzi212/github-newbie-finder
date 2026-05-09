@@ -86,6 +86,26 @@ streamlit run streamlit_app.py
 
 打开 streamlit 给的 URL（默认 `http://localhost:8501`），首页就是「需求检索」。
 
+### 之后日常启动：macOS 一键打开
+
+初次安装完成后，macOS 用户可以建一个桌面双击入口：
+
+```bash
+chmod +x scripts/launch.command
+ln -sf "$PWD/scripts/launch.command" ~/Desktop/"启动 GitHub 小白检索器.command"
+```
+
+之后双击桌面上的 **`启动 GitHub 小白检索器.command`** 就会自动：
+
+1. 启动 backend（`:8000`）和 Streamlit（`:8501`），已在跑则跳过，不会重复杀进程；
+2. 等 Streamlit 就绪后打开 `http://localhost:8501`。
+
+> ⚠️ 服务通过 `nohup` 在后台运行：**关闭浏览器或 Terminal 窗口都不会停止它们**。需要停止时：
+>
+> ```bash
+> pkill -f 'uvicorn app.main' ; pkill -f 'streamlit run streamlit_app'
+> ```
+
 ### 配置 API Key 的两种方式
 
 1. **网页里管理（推荐）**：侧边栏「🔑 API Key 管理」展开，填表保存，激活按钮切换。多套配置存在 SQLite 里，跨重启保留。
