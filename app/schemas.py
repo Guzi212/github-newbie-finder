@@ -289,6 +289,7 @@ class SearchResponse(BaseModel):
 class RankRequest(BaseModel):
     query_id: int
     top_n: int = 5
+    user_profile: Optional[UserProfile] = None
 
 
 class RankResponse(BaseModel):

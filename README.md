@@ -5,9 +5,13 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B.svg)
 
+🌐 **语言**：中文 · [English](README.en.md)
+
 > 用一句中文描述你想做的事，工具帮你找 GitHub 项目、判断难度、写一份新手能跟着跑的部署教程。
 >
 > _Describe your need in one sentence — get the top GitHub projects ranked for beginners, plus a personalised, step-by-step deployment tutorial. (Bilingual zh/en export to Markdown for Obsidian.)_
+
+> 关于 UI 语言：本工具主要面向中文用户，**界面文字保持中文**。LLM 产出的内容（推荐摘要、优缺点、教程、Markdown 导出）会**跟随侧边栏「教程语言」**（zh / en）。
 
 ---
 

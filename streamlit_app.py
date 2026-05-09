@@ -301,7 +301,8 @@ def page_search() -> None:
             )
             with st.spinner("抓取快照 + 规则评分 + LLM 重排…"):
                 ranked = _post("/api/recommendations/rank",
-                               {"query_id": parsed["query_id"], "top_n": top_n})
+                               {"query_id": parsed["query_id"], "top_n": top_n,
+                                "user_profile": PROFILE})
         except RuntimeError as e:
             st.error(str(e))
             return

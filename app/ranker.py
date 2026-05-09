@@ -33,6 +33,7 @@ from .schemas import (
     RerankBatchResult,
     RequirementParseResult,
     RuleScore,
+    UserProfile,
 )
 from .scorer import score as rule_score
 
@@ -42,6 +43,8 @@ log = logging.getLogger(__name__)
 def _build_rerank_payload(
     parsed: RequirementParseResult,
     scored: list[tuple[RepoSnapshot, RuleScore]],
+    *,
+    lang: str = "zh",
 ) -> dict:
     candidates = []
     for snap, rs in scored:
@@ -61,6 +64,7 @@ def _build_rerank_payload(
             "readme_excerpt": (snap.readme or "")[:900],
         })
     return {
+        "preferred_language": lang,
         "parsed_requirement": parsed.model_dump(),
         "candidates": candidates,
     }
@@ -94,37 +98,70 @@ def _evidence_for(snap: RepoSnapshot, analysis: RepoAnalysisResult) -> list[Evid
     return out
 
 
+_RAT_I18N = {
+    "purpose":     {"zh": "📌 项目用途：",   "en": "📌 What it does: "},
+    "summary":     {
+        "zh": "🧮 综合判断：规则分 {total:.0f}/100（部署难度 {level}），最强维度是「{name}」（{ev}）。",
+        "en": "🧮 Summary: rule score {total:.0f}/100 (deploy level {level}); strongest dimension is \"{name}\" ({ev}).",
+    },
+    "model_eval":  {
+        "zh": "🤖 模型评估：与需求匹配度 {fit:.2f}，新手友好度 {beg:.2f}。",
+        "en": "🤖 Model judgement: fit_score {fit:.2f}, beginner_score {beg:.2f}.",
+    },
+    "pros":        {"zh": "✅ 推荐理由：",   "en": "✅ Pros: "},
+    "cons":        {"zh": "⚠️ 需要权衡：",   "en": "⚠️ Cons: "},
+    "risks":       {"zh": "🚩 风险提示：",   "en": "🚩 Risks: "},
+    "diffs":       {"zh": "✨ 差异化：",     "en": "✨ Differentiators: "},
+    "missing":     {"zh": "❓ 资料缺口：",   "en": "❓ Missing info: "},
+    "penalty":     {
+        "zh": "⚖️ 评分修正：模型判断匹配度偏低，最终分已下调。",
+        "en": "⚖️ Score adjusted: LLM fit-score is low, final score down-weighted.",
+    },
+    "joiner":      {"zh": "；", "en": "; "},
+    "terminator":  {"zh": "。", "en": "."},
+    "rerank_warn": {
+        "zh": "ℹ️ 注意：LLM 重排本次未成功，仅使用规则评分（原因：{err}）。建议稍后重试以获得更高质量的语义匹配。",
+        "en": "ℹ️ Heads-up: LLM rerank failed this run; only rule score was used (reason: {err}). Re-run later for higher-quality semantic matching.",
+    },
+}
+
+
+def _t(key: str, lang: str, **fmt) -> str:
+    val = _RAT_I18N[key].get(lang) or _RAT_I18N[key]["zh"]
+    return val.format(**fmt) if fmt else val
+
+
 def _rationale(rs: RuleScore, analysis: RepoAnalysisResult | None,
-               penalty_applied: bool = False) -> str:
+               *, lang: str = "zh", penalty_applied: bool = False) -> str:
     """Compose a multi-line, evidence-rich rationale for the recommendation card."""
     strongest = max(rs.breakdown, key=lambda b: b.score * b.weight)
     parts: list[str] = []
+    joiner = _t("joiner", lang)
+    term = _t("terminator", lang)
 
     if analysis and analysis.summary:
-        parts.append(f"📌 项目用途：{analysis.summary.strip()}")
+        parts.append(_t("purpose", lang) + analysis.summary.strip())
 
-    parts.append(
-        f"🧮 综合判断：规则分 {rs.total:.0f}/100（部署难度 {rs.deployment_level}），"
-        f"最强维度是「{strongest.name}」（{strongest.evidence}）。"
-    )
+    parts.append(_t("summary", lang,
+                    total=rs.total, level=rs.deployment_level,
+                    name=strongest.name, ev=strongest.evidence))
 
     if analysis:
-        parts.append(
-            f"🤖 模型评估：与需求匹配度 {analysis.fit_score:.2f}，新手友好度 {analysis.beginner_score:.2f}。"
-        )
+        parts.append(_t("model_eval", lang,
+                        fit=analysis.fit_score, beg=analysis.beginner_score))
         if analysis.pros:
-            parts.append("✅ 推荐理由：" + "；".join(analysis.pros[:3]) + "。")
+            parts.append(_t("pros", lang) + joiner.join(analysis.pros[:3]) + term)
         if analysis.cons:
-            parts.append("⚠️ 需要权衡：" + "；".join(analysis.cons[:2]) + "。")
+            parts.append(_t("cons", lang) + joiner.join(analysis.cons[:2]) + term)
         if analysis.risk_flags:
-            parts.append("🚩 风险提示：" + "；".join(analysis.risk_flags[:2]) + "。")
+            parts.append(_t("risks", lang) + joiner.join(analysis.risk_flags[:2]) + term)
         if analysis.differentiators:
-            parts.append("✨ 差异化：" + "；".join(analysis.differentiators[:2]) + "。")
+            parts.append(_t("diffs", lang) + joiner.join(analysis.differentiators[:2]) + term)
         if analysis.missing_info:
-            parts.append("❓ 资料缺口：" + "；".join(analysis.missing_info[:2]) + "。")
+            parts.append(_t("missing", lang) + joiner.join(analysis.missing_info[:2]) + term)
 
     if penalty_applied:
-        parts.append("⚖️ 评分修正：模型判断匹配度偏低，最终分已下调。")
+        parts.append(_t("penalty", lang))
 
     return "\n".join(parts)
 
@@ -134,9 +171,13 @@ def rank(
     snapshots: Iterable[RepoSnapshot],
     *,
     top_n: int | None = None,
+    user_profile: UserProfile | None = None,
 ) -> list[Recommendation]:
     s = get_settings()
     top_n = top_n or s.top_n
+    lang = (user_profile.preferred_language if user_profile else "zh") or "zh"
+    if lang not in ("zh", "en"):
+        lang = "zh"
 
     snapshots = list(snapshots)
     if not snapshots:
@@ -162,7 +203,7 @@ def rank(
     rerank_error = ""
     if rerank_window:
         try:
-            payload = _build_rerank_payload(parsed, rerank_window)
+            payload = _build_rerank_payload(parsed, rerank_window, lang=lang)
             batch = call_structured("rerank_repos", payload, RerankBatchResult)
             analyses_by_name = {a.full_name: a for a in batch.analyses}
         except Exception as e:
@@ -197,7 +238,7 @@ def rank(
             rerank=analysis,
             final_rank=0,            # filled below
             final_score=final,
-            rationale=_rationale(rs, analysis, penalty_applied=penalty_applied),
+            rationale=_rationale(rs, analysis, lang=lang, penalty_applied=penalty_applied),
             evidence=_evidence_for(snap, analysis) if analysis else [
                 Evidence(
                     kind="metadata",
@@ -214,10 +255,7 @@ def rank(
 
     if rerank_failed and recs:
         # Surface the fallback in the top result's rationale so the UI shows it.
-        warn = (
-            "ℹ️ 注意：LLM 重排本次未成功，仅使用规则评分（原因："
-            f"{rerank_error[:140]}）。建议稍后重试以获得更高质量的语义匹配。"
-        )
+        warn = _t("rerank_warn", lang, err=rerank_error[:140])
         recs[0].rationale = warn + "\n\n" + recs[0].rationale
 
     return recs

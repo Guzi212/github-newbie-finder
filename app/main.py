@@ -119,7 +119,7 @@ def api_rank(req: RankRequest) -> RankResponse:
         return RankResponse(query_id=req.query_id, parsed=parsed, recommendations=[])
 
     snapshots = github.fetch_snapshots([c.full_name for c in candidates])
-    recs = ranker.rank(parsed, snapshots, top_n=req.top_n)
+    recs = ranker.rank(parsed, snapshots, top_n=req.top_n, user_profile=req.user_profile)
     db.save_recommendations(req.query_id, recs)
 
     return RankResponse(
